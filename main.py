@@ -14,6 +14,7 @@ __date__ = '03.02.16 18:43'
 __description__ = """
 Парсим amazon. Получаем информацию о продавцах и пишем ее в csv файл.
 """
+COUNT_REQUEST = 0
 
 
 def save_info(data):
@@ -24,61 +25,99 @@ def save_info(data):
         ])
 
 
-def main():
-    # выводим высе найденые товары
-    print("Start working")
+def get_search_url():
+    if isinstance(settings.SEARCH_URL, tuple):
+        for url in settings.SEARCH_URL:
+            yield url
+    else:
+        for phrase in settings.PHRASES:
+            yield settings.SEARCH_URL.format(phrase)
+
+
+def page_load(grab, url):
+    global COUNT_REQUEST
+    if COUNT_REQUEST > 3:
+        raise SystemExit("Load error")
+    try:
+        document = grab.go(url)
+        COUNT_REQUEST = 0
+        return document
+    except GrabTimeoutError:
+        print("Load timeout in url:\n", url, "\nTry change proxy...")
+        grab.change_proxy()
+        COUNT_REQUEST += 1
+        return page_load(grab, url)
+
+
+def start_grab():
     grab = Grab()
     if settings.USE_PROXY:
         grab.load_proxylist(**settings.PROXY)
+    return grab
+
+
+def get_item_href(items):
+    for item in items:
+        href = item.get('href')
+        if 'keywords=' not in href:
+            continue
+        yield href
+
+
+def get_seller_id(grab):
+    # получаем ссылку на продавца
     try:
-        grab.go(settings.SEARCH_URL.format(settings.PHRASES[0]))
-    except GrabTimeoutError as e:
-        raise SystemExit(e)
-    for i in range(1, 400):
-        print("Page:", i)
-        items = grab.doc.tree.xpath(settings.XPATH['items'])
-        for item in items:
-            link = item.get('href')
-            # if`ом исключаем мусор. иногда попадается 3 лишних результата
-            if 'keywords=' not in link:
-                continue
+        seller_link = grab.doc.tree.xpath(settings.XPATH['seller_link'])[
+            0].get('href')
+        return re.findall(settings.PATTERNS['seller_id'], seller_link)[0]
+    except IndexError:
+        return None
+
+
+def main():
+    # выводим высе найденые товары
+    print("Start working")
+
+    grab = start_grab()
+
+    get_nex_url = get_search_url()
+
+    while True:
+        try:
+            page_load(grab, get_nex_url.__next__())
+        except StopIteration:
+            raise SystemExit("Working end")
+
+        items = get_item_href(grab.doc.tree.xpath(settings.XPATH['items']))
+        for link in items:
             # переходим по линке на итем
-            g = Grab()
-            try:
-                g.go(link)
-            except GrabTimeoutError as e:
-                print("При загрузке", link, "возбуждено исключение", e)
+            g = start_grab()
+            page_load(g, link)
+
+            seller_id = get_seller_id(g)
+
+            if seller_id is None:
                 continue
-            # получаем ссылку на продавца
-            try:
-                seller_link = g.doc.tree.xpath(settings.XPATH['seller_link'])[
-                    0].get('href')
-            except IndexError:
-                continue
-            # из ссылки на продавца получаем ид
-            seller_id = re.findall(settings.PATTERNS['seller_id'],
-                                   seller_link)[0]
+
             # переходим на страницу с подробными данными по селлеру
             seller_link = settings.SELLER_URL.format(seller_id)
-            try:
-                g.go(seller_link)
-            except GrabTimeoutError as e:
-                print("При загрузке", seller_link, "возбуждено исключение", e)
-                continue
+            page_load(g, seller_link)
+
             # получаем подробную информацию по селлеру
             try:
-                seller_full_info = \
+                web_element = \
                 g.doc.tree.xpath(settings.XPATH['seller_info'])[0]
             except IndexError:
-                print(link)
-                print("Seler info not found",
+                print("Link to seller info not found",
                       settings.SELLER_URL.format(seller_id))
                 continue
-            # очищаем информацию по селлеру от тегов
-            seller_full_info_html = tostring(seller_full_info,
+
+            seller_full_info_html = tostring(web_element,
                                              encoding='utf-8').decode('utf-8')
+            # очищаем информацию по селлеру от тегов
             seller_full_info = re.sub(r'\<[^>]*\>', '', seller_full_info_html)
             seller_full_info = re.sub(r'(?<=\s)\s', '', seller_full_info)
+
             # записываем данные о продавце в список
             seller_info = [
                 re.findall(settings.PATTERNS['name'], seller_full_info_html,
@@ -104,11 +143,9 @@ def main():
             next_link += grab.doc.tree.xpath(settings.XPATH['next_page'])[
                 0].get('href')
         except IndexError:
-            raise SystemExit("Working stop. Element 'next page' not found")
-        try:
-            grab.go(next_link)
-        except GrabTimeoutError as e:
-            raise SystemExit(e)
+            pass
+
+        page_load(grab, next_link)
 
     del grab
 
