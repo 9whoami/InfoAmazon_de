@@ -16,21 +16,11 @@ __description__ = """
 
 
 def save_info(data):
-    with open("some.csv", "a") as csv_fh:
-        writer = csv.writer(csv_fh, delimiter=':', quoting=csv.QUOTE_MINIMAL, quotechar='`', lineterminator='|')
+    with open(settings.OUT_FILE[0], "a") as csv_fh:
+        writer = csv.writer(csv_fh, **settings.CSV)
         writer.writerows([
-                          data
-                        ])
-
-
-# def save_info():
-#     output_file = open("result.csv", "w")
-#     wrtr = csv.DictWriter(output_file, fieldnames=['name', 'number', 'text'])
-#     fieldname = dict(name='name', number="number", text='text')
-#     rec = dict(name='1', number='2', text='3')
-#     wrtr.writerow(fieldname)
-#     wrtr.writerow(rec)
-#     output_file.close()
+            data
+        ])
 
 
 def main():
@@ -38,10 +28,10 @@ def main():
     print("Start working")
     grab = Grab()
     grab.go(settings.SEARCH_URL.format(settings.PHRASES[0]))
-    for i in range(2, 400):
+    for i in range(1, 400):
         print("Page:", i)
         items = grab.doc.tree.xpath(settings.XPATH['items'])
-        for j, item in enumerate(items):
+        for item in items:
             link = item.get('href')
             # if`ом исключаем мусор. иногда попадается 3 лишних результата
             if 'keywords=' not in link:
@@ -53,11 +43,13 @@ def main():
             except GrabTimeoutError as e:
                 print("При загрузке", link, "возбуждено исключение", e)
                 continue
+            # получаем ссылку на продавца
             try:
-                seller_link = g.doc.tree.xpath(".//*[@id='merchant-info']/a")[0].get('href')
+                seller_link = g.doc.tree.xpath(settings.XPATH['seller_link'])[
+                    0].get('href')
             except IndexError:
                 continue
-
+            # из ссылки на продавца получаем ид
             seller_id = re.findall(settings.PATTERNS['seller_id'],
                                    seller_link)[0]
             # переходим на страницу с подробными данными по селлеру
@@ -67,17 +59,21 @@ def main():
             except GrabTimeoutError as e:
                 print("При загрузке", seller_link, "возбуждено исключение", e)
                 continue
-
+            # получаем подробную информацию по селлеру
             try:
-                seller_full_info = g.doc.tree.xpath(".//*[@id='aag_detailsAbout']")[0]
+                seller_full_info = \
+                g.doc.tree.xpath(settings.XPATH['seller_info'])[0]
             except IndexError:
                 print(link)
-                print("Seler info not found", settings.SELLER_URL.format(seller_id))
+                print("Seler info not found",
+                      settings.SELLER_URL.format(seller_id))
                 continue
-
-            seller_full_info_html = tostring(seller_full_info, encoding='utf-8').decode('utf-8')
+            # очищаем информацию по селлеру от тегов
+            seller_full_info_html = tostring(seller_full_info,
+                                             encoding='utf-8').decode('utf-8')
             seller_full_info = re.sub(r'\<[^>]*\>', '', seller_full_info_html)
             seller_full_info = re.sub(r'(?<=\s)\s', '', seller_full_info)
+            # записываем данные о продавце в список
             seller_info = [
                 re.findall(settings.PATTERNS['name'], seller_full_info_html,
                            re.MULTILINE),
@@ -90,26 +86,23 @@ def main():
                 re.findall(settings.PATTERNS['site'], seller_full_info_html,
                            re.MULTILINE),
                 seller_link,
-                seller_full_info,]
+                seller_full_info]
 
             save_info(seller_info)
 
-            # with open(seller_info[0] + '.txt', 'w') as f:
-            #     f.write(link + '\n')
-            #     f.write(seller_link + '\n')
-            #     f.write(seller_full_info)
-            #     f.write(str(seller_info))
             del g
 
+        # пытаемся получить ссылку на селдующую страницу
         next_link = 'https://www.amazon.de'
-        next_link += grab.doc.tree.xpath(".//*[@id='pagnNextLink']")[0].get('href')
-        grab.go(
-            next_link
-        )
+        try:
+            next_link += grab.doc.tree.xpath(settings.XPATH['next_page'])[
+                0].get('href')
+        except IndexError:
+            raise SystemExit("Working stop. Element 'next page' not found")
+        grab.go(next_link)
 
     del grab
 
 
 if __name__ in "__main__":
-    # save_info()
     main()
