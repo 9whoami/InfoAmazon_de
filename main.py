@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import re
 import csv
+import logging
 from lxml.html import tostring
 from grab import Grab
 from grab.error import GrabTimeoutError
@@ -27,7 +28,12 @@ def main():
     # выводим высе найденые товары
     print("Start working")
     grab = Grab()
-    grab.go(settings.SEARCH_URL.format(settings.PHRASES[0]))
+    if settings.USE_PROXY:
+        grab.load_proxylist(**settings.PROXY)
+    try:
+        grab.go(settings.SEARCH_URL.format(settings.PHRASES[0]))
+    except GrabTimeoutError as e:
+        raise SystemExit(e)
     for i in range(1, 400):
         print("Page:", i)
         items = grab.doc.tree.xpath(settings.XPATH['items'])
@@ -99,7 +105,10 @@ def main():
                 0].get('href')
         except IndexError:
             raise SystemExit("Working stop. Element 'next page' not found")
-        grab.go(next_link)
+        try:
+            grab.go(next_link)
+        except GrabTimeoutError as e:
+            raise SystemExit(e)
 
     del grab
 

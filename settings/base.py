@@ -15,11 +15,6 @@ PHRASES = (
     'Bra damen',
 )
 
-# Список прокси
-PROXY_LIST = (
-
-)
-
 # настройка параметров записи в csv файл
 OUT_FILE = 'out.csv',  # имя файла для вывода
 CSV = dict(
@@ -28,3 +23,6 @@ CSV = dict(
     quotechar='`',  # символ цитирования
     lineterminator='|'  # разделитель строк
 )
+
+#
+USE_PROXY = False
