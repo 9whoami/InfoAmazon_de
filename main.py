@@ -5,7 +5,7 @@ import csv
 import logging
 from lxml.html import tostring
 from grab import Grab
-from grab.error import GrabTimeoutError
+from grab.error import GrabTimeoutError, GrabNetworkError
 import settings
 
 __author__ = 'whoami'
@@ -42,7 +42,7 @@ def page_load(grab, url):
         document = grab.go(url)
         COUNT_REQUEST = 0
         return document
-    except GrabTimeoutError:
+    except (GrabTimeoutError, GrabNetworkError):
         if settings.USE_PROXY:
             print("Load timeout in url:\n", url, "\nTry change proxy...")
             grab.change_proxy()
