@@ -62,7 +62,7 @@ def start_grab():
 def get_item_href(items):
     for item in items:
         href = item.get('href')
-        if 'keywords=' not in href:
+        if 'amazon.de' not in href:
             continue
         yield href
 
