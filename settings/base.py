@@ -181,9 +181,9 @@ PHRASES = (
 OUT_FILE = 'out.csv',  # имя файла для вывода
 CSV = dict(
     delimiter=';',  # разделитель значений
-    quoting=QuoteParam.ALL,  # параметр цитирования
-    quotechar='`',  # символ цитирования
-    lineterminator='\n'  # разделитель строк
+    quoting=QuoteParam.MINIMAL,  # параметр цитирования
+    quotechar="'",  # символ цитирования
+    # lineterminator='\n'  # разделитель строк
 )
 
 #

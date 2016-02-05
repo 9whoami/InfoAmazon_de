@@ -19,11 +19,11 @@ PATTERNS = dict(
     # Получение имени продавца
     name=r'\<h3\>(.+?)\s\<\/h3\>',
     # Телефон
-    phone=r'(Telefon|Tel|Phone):\s*([0-9\-\s\(\)\/\+]+)\<',
+    phone=r'[Telefon|Tel|Phone]:\s*([0-9\-\s\(\)\/\+]+)\<',
     # Факс
-    fax=r'(Telefax|Fax):\s([0-9\-\s\(\)\/\+]+)\<',
+    fax=r'[Telefax|Fax]:\s([0-9\-\s\(\)\/\+]+)\<',
     # Сайт
     site=r'www\.(.+?)\<',
     # Мыло
-    email=r'(Email|E-Mail|eMail):.+?([A-z0-9\_\-\.]+@[A-z0-9\.\-]+\.[A-z0-9]+)\<'
+    email=r'[Email|E-Mail|eMail]:.+?([A-z0-9\_\-\.]+@[A-z0-9\.\-]+\.[A-z0-9]+)\<'
 )

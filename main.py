@@ -18,11 +18,17 @@ COUNT_REQUEST = 0
 
 
 def save_info(data):
+    out_data = []
+    for item in data:
+        item = str(item)
+        buff = re.sub(r"[\[|\]|\(|\)|\']", '', item)
+        buff = 'No data' if buff == '' else buff
+        out_data.append(buff)
+
     with open(settings.OUT_FILE[0], "a") as csv_fh:
         writer = csv.writer(csv_fh, **settings.CSV)
-        writer.writerows([
-            data
-        ])
+        writer.writerows([out_data])
+
 
 
 def get_search_url():
@@ -122,7 +128,7 @@ def main():
                                              encoding='utf-8').decode('utf-8')
             # очищаем информацию по селлеру от тегов
             seller_full_info = re.sub(r'\<[^>]*\>', '', seller_full_info_html)
-            seller_full_info = re.sub(r'\s', '', seller_full_info)
+            seller_full_info = re.sub(r'\s', ' ', seller_full_info)
             seller_full_info = re.sub(r'(?<=\s)\s', '', seller_full_info)
 
             # записываем данные о продавце в список
