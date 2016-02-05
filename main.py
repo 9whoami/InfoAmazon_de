@@ -43,10 +43,13 @@ def page_load(grab, url):
         COUNT_REQUEST = 0
         return document
     except GrabTimeoutError:
-        print("Load timeout in url:\n", url, "\nTry change proxy...")
-        grab.change_proxy()
-        COUNT_REQUEST += 1
-        return page_load(grab, url)
+        if settings.USE_PROXY:
+            print("Load timeout in url:\n", url, "\nTry change proxy...")
+            grab.change_proxy()
+            COUNT_REQUEST += 1
+            return page_load(grab, url)
+        else:
+            raise SystemExit("Load timeout in url:\n", url)
 
 
 def start_grab():
