@@ -180,10 +180,10 @@ PHRASES = (
 # настройка параметров записи в csv файл
 OUT_FILE = 'out.csv',  # имя файла для вывода
 CSV = dict(
-    delimiter=':',  # разделитель значений
-    quoting=QuoteParam.MINIMAL,  # параметр цитирования
+    delimiter=';',  # разделитель значений
+    quoting=QuoteParam.ALL,  # параметр цитирования
     quotechar='`',  # символ цитирования
-    lineterminator='|'  # разделитель строк
+    lineterminator='\n'  # разделитель строк
 )
 
 #

@@ -122,6 +122,7 @@ def main():
                                              encoding='utf-8').decode('utf-8')
             # очищаем информацию по селлеру от тегов
             seller_full_info = re.sub(r'\<[^>]*\>', '', seller_full_info_html)
+            seller_full_info = re.sub(r'\s', '', seller_full_info)
             seller_full_info = re.sub(r'(?<=\s)\s', '', seller_full_info)
 
             # записываем данные о продавце в список
