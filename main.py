@@ -25,7 +25,7 @@ def save_info(data):
         buff = 'No data' if buff == '' else buff
         out_data.append(buff)
 
-    with open(settings.OUT_FILE[0], "a") as csv_fh:
+    with open(settings.OUT_FILE, "a") as csv_fh:
         writer = csv.writer(csv_fh, **settings.CSV)
         writer.writerows([out_data])
 
