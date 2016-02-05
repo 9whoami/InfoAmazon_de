@@ -37,7 +37,7 @@ def get_search_url():
 def page_load(grab, url):
     global COUNT_REQUEST
     if COUNT_REQUEST > 3:
-        raise SystemExit("Load error")
+        return None
     try:
         document = grab.go(url)
         COUNT_REQUEST = 0
@@ -49,7 +49,7 @@ def page_load(grab, url):
             COUNT_REQUEST += 1
             return page_load(grab, url)
         else:
-            raise SystemExit("Load timeout in url:\n", url)
+            return None
 
 
 def start_grab():
@@ -87,7 +87,8 @@ def main():
 
     while True:
         try:
-            page_load(grab, get_nex_url.__next__())
+            result = page_load(grab, get_nex_url.__next__())
+            if result is None: continue
         except StopIteration:
             raise SystemExit("Working end")
 
@@ -95,7 +96,8 @@ def main():
         for link in items:
             # переходим по линке на итем
             g = start_grab()
-            page_load(g, link)
+            result = page_load(g, link)
+            if result is None: continue
 
             seller_id = get_seller_id(g)
 
@@ -104,7 +106,8 @@ def main():
 
             # переходим на страницу с подробными данными по селлеру
             seller_link = settings.SELLER_URL.format(seller_id)
-            page_load(g, seller_link)
+            result = page_load(g, seller_link)
+            if result is None: continue
 
             # получаем подробную информацию по селлеру
             try:
@@ -148,7 +151,8 @@ def main():
         except IndexError:
             pass
 
-        page_load(grab, next_link)
+        result = page_load(grab, next_link)
+        if result is None: continue
 
     del grab
 
